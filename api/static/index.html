@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orbit Eats</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f4f5f7; color: #222; }
+    header { background: #1f4e79; color: white; padding: 14px 24px; }
+    header h1 { margin: 0; font-size: 22px; }
+    nav button { margin-right: 6px; }
+    main { padding: 24px; max-width: 1000px; margin: auto; }
+    section { display: none; }
+    section.active { display: block; }
+    .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
+    th { background: #eef2f7; }
+    form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    input, select, button { padding: 8px; font-size: 14px; }
+    button { cursor: pointer; border: none; border-radius: 4px; background: #1f4e79; color: white; }
+    button.danger { background: #b03a2e; }
+    #message { margin-top: 8px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Orbit Eats</h1>
+    <nav>
+      <button onclick="showSection('customers')">Clientes</button>
+      <!-- Tu compañero agrega aquí: Productos, Pedidos, Stock -->
+    </nav>
+  </header>
+
+  <main>
+    <!-- ===================== CLIENTES ===================== -->
+    <section id="customers" class="active">
+      <div class="card">
+        <h2>Nuevo cliente</h2>
+        <form id="customer-form">
+          <input name="first_name" placeholder="Nombre" required>
+          <input name="last_name" placeholder="Apellido" required>
+          <input name="phone" placeholder="Teléfono" required>
+          <input name="email" type="email" placeholder="Email" required>
+          <input name="address" placeholder="Dirección" required>
+          <button type="submit">Guardar</button>
+        </form>
+        <div id="message"></div>
+      </div>
+
+      <div class="card">
+        <h2>Clientes registrados</h2>
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Dirección</th><th></th></tr>
+          </thead>
+          <tbody id="customer-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Same token the API checks (NFR-02)
+    const TOKEN = 'token-secreto-123';
+
+    // Every call to the API goes through this function
+    async function api(method, url, body) {
+      const options = {
+        method: method,
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
+      };
+      if (body) options.body = JSON.stringify(body);
+      const response = await fetch(url, options);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || JSON.stringify(data.errors));
+      return data;
+    }
+
+    function showSection(id) {
+      document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function showMessage(text, ok) {
+      const box = document.getElementById('message');
+      box.textContent = text;
+      box.style.color = ok ? 'green' : '#b03a2e';
+    }
+
+    // READ: GET /customers
+    async function loadCustomers() {
+      const customers = await api('GET', '/customers');
+      const rows = document.getElementById('customer-rows');
+      rows.innerHTML = '';
+      for (const c of customers) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${c.customer_id}</td><td>${c.first_name} ${c.last_name}</td>
+          <td>${c.email}</td><td>${c.phone}</td><td>${c.address}</td>
+          <td><button class="danger" onclick="deleteCustomer(${c.customer_id})">Eliminar</button></td>`;
+        rows.appendChild(tr);
+      }
+    }
+
+    // CREATE: POST /customers
+    document.getElementById('customer-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = event.target;
+      const customer = Object.fromEntries(new FormData(form));
+      try {
+        await api('POST', '/customers', customer);
+        showMessage('Cliente guardado', true);
+        form.reset();
+        loadCustomers();
+      } catch (error) {
+        showMessage('Error: ' + error.message, false);
+      }
+    });
+
+    // DELETE: DELETE /customers/<id>
+    async function deleteCustomer(id) {
+      if (!confirm('¿Eliminar el cliente ' + id + '?')) return;
+      try {
+        await api('DELETE', '/customers/' + id);
+        loadCustomers();
+      } catch (error) {
+        showMessage('No se pudo eliminar: ' + error.message, false);
+      }
+    }
+
+    loadCustomers();
+  </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+### Orbit Eats API - manual requests (VS Code extension "REST Client")
+### Click "Send Request" above each request. Start the API first: python app.py
+
+@base = http://127.0.0.1:8000
+@token = Bearer token-secreto-123
+
+### 1. Without token -> 401 (NFR-02)
+GET {{base}}/customers
+
+### 2. List customers
+GET {{base}}/customers
+Authorization: {{token}}
+
+### 3. Create a customer -> 201 (change the email if it already exists)
+POST {{base}}/customers
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "first_name": "Sofia",
+  "last_name": "Andrade",
+  "address": "Av. Colon E5-20",
+  "phone": "0984445566",
+  "email": "sofia.andrade@mail.com"
+}
+
+### 4. Same email again -> 409
+POST {{base}}/customers
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "first_name": "Sofia",
+  "last_name": "Andrade",
+  "address": "Av. Colon E5-20",
+  "phone": "0984445566",
+  "email": "sofia.andrade@mail.com"
+}
+
+### 5. Create an order with 2 products -> 201, total calculated by the API
+POST {{base}}/orders
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "customer_id": 1,
+  "delivery_address": "Av. Amazonas N24-10",
+  "items": [
+    {"product_id": 1, "quantity": 2},
+    {"product_id": 2, "quantity": 1}
+  ]
+}
+
+### 6. Change status and assign the delivery employee (use the order_id from request 5)
+PATCH {{base}}/orders/1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "status": "on_the_way",
+  "employee_id": 1
+}
+
+### 7. Invalid status -> 400 (CHECK constraint)
+PATCH {{base}}/orders/1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "status": "lost"
+}
+
+### 8. Recipe of product 1 (FR-03)
+GET {{base}}/products/1/recipe
+Authorization: {{token}}
+
+### 9. Ingredients below minimum stock (FR-04)
+GET {{base}}/ingredients/low-stock
+Authorization: {{token}}
+
+### 10. Suppliers of ingredient 2 (FR-05)
+GET {{base}}/ingredients/2/suppliers
+Authorization: {{token}}
