@@ -1,135 +1,1247 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Orbit Eats</title>
+
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #f4f5f7; color: #222; }
-    header { background: #1f4e79; color: white; padding: 14px 24px; }
-    header h1 { margin: 0; font-size: 22px; }
-    nav button { margin-right: 6px; }
-    main { padding: 24px; max-width: 1000px; margin: auto; }
-    section { display: none; }
-    section.active { display: block; }
-    .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,.1); }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
-    th { background: #eef2f7; }
-    form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    input, select, button { padding: 8px; font-size: 14px; }
-    button { cursor: pointer; border: none; border-radius: 4px; background: #1f4e79; color: white; }
-    button.danger { background: #b03a2e; }
-    #message { margin-top: 8px; font-weight: bold; }
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f4f5f7;
+      color: #222;
+    }
+
+    header {
+      background: #1f4e79;
+      color: white;
+      padding: 16px 24px;
+    }
+
+    header h1 {
+      margin: 0 0 14px;
+      font-size: 24px;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    nav button {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.4);
+    }
+
+    nav button.active {
+      background: white;
+      color: #1f4e79;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: auto;
+      padding: 24px;
+    }
+
+    section {
+      display: none;
+    }
+
+    section.active {
+      display: block;
+    }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      overflow-x: auto;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 21px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background: #eef2f7;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    input, select, button {
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 4px;
+    }
+
+    input, select {
+      border: 1px solid #bbb;
+      width: 100%;
+      min-width: 0;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      background: #1f4e79;
+      color: white;
+    }
+
+    button:hover {
+      opacity: 0.88;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.danger {
+      background: #b03a2e;
+    }
+
+    button.secondary {
+      background: #657786;
+    }
+
+    button.success {
+      background: #26734d;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .message {
+      margin-top: 12px;
+      font-weight: bold;
+    }
+
+    .low-stock {
+      color: #b03a2e;
+      font-weight: bold;
+      background: #fff0ee;
+    }
+
+    .status {
+      font-weight: bold;
+    }
+
+    .order-controls {
+      display: grid;
+      grid-template-columns: 2fr 1fr auto;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    #order-items {
+      padding-left: 20px;
+    }
+
+    #order-items li {
+      margin: 8px 0;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    .info {
+      color: #666;
+      font-size: 14px;
+    }
+
+    @media (max-width: 700px) {
+      form, .order-controls {
+        grid-template-columns: 1fr;
+      }
+
+      main {
+        padding: 12px;
+      }
+
+      th, td {
+        padding: 7px;
+        font-size: 13px;
+      }
+    }
   </style>
 </head>
+
 <body>
+
+  <!-- ===================== NAVEGACIÓN ===================== -->
+
   <header>
     <h1>Orbit Eats</h1>
+
     <nav>
-      <button onclick="showSection('customers')">Clientes</button>
-      <!-- Tu compañero agrega aquí: Productos, Pedidos, Stock -->
+      <button class="active" data-section="customers"
+        onclick="showSection('customers')">
+        Clientes
+      </button>
+
+      <button data-section="products"
+        onclick="showSection('products')">
+        Productos
+      </button>
+
+      <button data-section="orders"
+        onclick="showSection('orders')">
+        Pedidos
+      </button>
+
+      <button data-section="stock"
+        onclick="showSection('stock')">
+        Stock
+      </button>
     </nav>
   </header>
 
   <main>
+
     <!-- ===================== CLIENTES ===================== -->
+
     <section id="customers" class="active">
+
       <div class="card">
         <h2>Nuevo cliente</h2>
+
         <form id="customer-form">
           <input name="first_name" placeholder="Nombre" required>
           <input name="last_name" placeholder="Apellido" required>
           <input name="phone" placeholder="Teléfono" required>
           <input name="email" type="email" placeholder="Email" required>
           <input name="address" placeholder="Dirección" required>
-          <button type="submit">Guardar</button>
+
+          <button type="submit">Guardar cliente</button>
         </form>
-        <div id="message"></div>
+
+        <div id="customer-message" class="message"></div>
       </div>
 
       <div class="card">
         <h2>Clientes registrados</h2>
-        <table>
-          <thead>
-            <tr><th>ID</th><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Dirección</th><th></th></tr>
-          </thead>
-          <tbody id="customer-rows"></tbody>
-        </table>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Dirección</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody id="customer-rows"></tbody>
+          </table>
+        </div>
       </div>
+
+      <!-- Formulario para editar clientes -->
+      <div class="card" id="edit-customer-card" hidden>
+        <h2>Editar cliente</h2>
+
+        <form id="edit-customer-form">
+          <input type="hidden" name="customer_id">
+
+          <input name="phone" placeholder="Nuevo teléfono" required>
+
+          <input name="address" placeholder="Nueva dirección" required>
+
+          <button type="submit">Guardar cambios</button>
+        </form>
+
+        <button class="secondary"
+          style="margin-top:10px"
+          onclick="closeEditCustomer()">
+          Cancelar edición
+        </button>
+
+        <div id="edit-customer-message" class="message"></div>
+      </div>
+
     </section>
+
+
+    <!-- ===================== PRODUCTOS ===================== -->
+
+    <section id="products">
+
+      <div class="card">
+        <h2>Nuevo producto</h2>
+
+        <form id="product-form">
+          <input name="name" placeholder="Nombre" required>
+
+          <input name="base_price"
+            type="number"
+            step="0.01"
+            min="0.01"
+            placeholder="Precio"
+            required>
+
+          <input name="category" placeholder="Categoría" required>
+
+          <input name="description" placeholder="Descripción">
+
+          <button type="submit">Guardar producto</button>
+        </form>
+
+        <div id="product-message" class="message"></div>
+      </div>
+
+      <div class="card">
+        <h2>Menú de productos</h2>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Precio</th>
+                <th>Disponible</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody id="product-rows"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ===================== PEDIDOS ===================== -->
+
+    <section id="orders">
+
+      <div class="card">
+        <h2>Nuevo pedido</h2>
+
+        <form id="order-form">
+          <select name="customer_id"
+            id="order-customer"
+            required>
+            <option value="">Seleccionar cliente</option>
+          </select>
+
+          <input name="delivery_address"
+            placeholder="Dirección de entrega"
+            required>
+        </form>
+
+        <h3>Agregar productos</h3>
+
+        <div class="order-controls">
+          <select id="order-product">
+            <option value="">Seleccionar producto</option>
+          </select>
+
+          <input id="order-quantity"
+            type="number"
+            min="1"
+            value="1">
+
+          <button type="button" onclick="addItem()">
+            Agregar producto
+          </button>
+        </div>
+
+        <h3>Productos del pedido</h3>
+
+        <ul id="order-items"></ul>
+
+        <p id="order-preview-total" class="status">
+          Total estimado: $0.00
+        </p>
+
+        <button class="success" onclick="sendOrder()">
+          Crear pedido
+        </button>
+
+        <div id="order-message" class="message"></div>
+      </div>
+
+      <div class="card">
+        <h2>Pedidos registrados</h2>
+
+        <button onclick="loadOrders()">
+          Actualizar pedidos
+        </button>
+
+        <div class="table-container" style="margin-top:12px">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody id="order-rows"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ===================== STOCK ===================== -->
+
+    <section id="stock">
+
+      <div class="card">
+        <h2>Inventario de ingredientes</h2>
+
+        <p class="info">
+          Los ingredientes que se encuentran por debajo del
+          stock mínimo aparecen resaltados en rojo.
+        </p>
+
+        <button onclick="loadStock()">
+          Actualizar inventario
+        </button>
+
+        <div id="stock-message" class="message"></div>
+
+        <div class="table-container" style="margin-top:12px">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Ingrediente</th>
+                <th>Unidad</th>
+                <th>Stock actual</th>
+                <th>Stock mínimo</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+
+            <tbody id="stock-rows"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
   </main>
 
+
   <script>
-    // Same token the API checks (NFR-02)
+
+    // ===================== API =====================
+
+    // Token utilizado por la API
     const TOKEN = 'token-secreto-123';
 
-    // Every call to the API goes through this function
+    // Datos temporales de la interfaz
+    let customersCache = [];
+    let productsCache = [];
+    let items = [];
+
+    // Función general de conexión con Flask
     async function api(method, url, body) {
       const options = {
         method: method,
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + TOKEN
+        }
       };
-      if (body) options.body = JSON.stringify(body);
+
+      if (body !== undefined) {
+        options.body = JSON.stringify(body);
+      }
+
       const response = await fetch(url, options);
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || JSON.stringify(data.errors));
+
+      const data = response.status === 204
+        ? {}
+        : await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+          JSON.stringify(data.errors || data)
+        );
+      }
+
       return data;
     }
 
-    function showSection(id) {
-      document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
+
+    // ===================== UTILIDADES =====================
+
+    // Evitar insertar HTML recibido de la base de datos
+    function escapeHTML(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
     }
 
-    function showMessage(text, ok) {
-      const box = document.getElementById('message');
+    // Formato de dinero
+    function money(value) {
+      return '$' + Number(value).toFixed(2);
+    }
+
+    // Mostrar mensajes
+    function showMessage(id, text, ok) {
+      const box = document.getElementById(id);
       box.textContent = text;
       box.style.color = ok ? 'green' : '#b03a2e';
     }
 
-    // READ: GET /customers
-    async function loadCustomers() {
-      const customers = await api('GET', '/customers');
-      const rows = document.getElementById('customer-rows');
-      rows.innerHTML = '';
-      for (const c of customers) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${c.customer_id}</td><td>${c.first_name} ${c.last_name}</td>
-          <td>${c.email}</td><td>${c.phone}</td><td>${c.address}</td>
-          <td><button class="danger" onclick="deleteCustomer(${c.customer_id})">Eliminar</button></td>`;
-        rows.appendChild(tr);
+    // Mostrar pantalla seleccionada
+    function showSection(id) {
+      document.querySelectorAll('main section').forEach(s => {
+        s.classList.remove('active');
+      });
+
+      document.getElementById(id).classList.add('active');
+
+      document.querySelectorAll('nav button').forEach(b => {
+        b.classList.toggle(
+          'active',
+          b.dataset.section === id
+        );
+      });
+
+      if (id === 'orders') {
+        loadOrderForm();
+        loadOrders();
+      }
+
+      if (id === 'stock') {
+        loadStock();
+      }
+
+      if (id === 'products') {
+        loadProducts();
+      }
+
+      if (id === 'customers') {
+        loadCustomers();
       }
     }
 
-    // CREATE: POST /customers
-    document.getElementById('customer-form').addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const form = event.target;
-      const customer = Object.fromEntries(new FormData(form));
+
+    // ===================== CLIENTES =====================
+
+    // READ: GET /customers
+    async function loadCustomers() {
       try {
-        await api('POST', '/customers', customer);
-        showMessage('Cliente guardado', true);
-        form.reset();
-        loadCustomers();
+        const customers = await api('GET', '/customers');
+
+        customersCache = customers;
+
+        const rows = document.getElementById('customer-rows');
+        rows.innerHTML = '';
+
+        for (const c of customers) {
+          const tr = document.createElement('tr');
+
+          tr.innerHTML = `
+            <td>${c.customer_id}</td>
+            <td>${escapeHTML(c.first_name)} ${escapeHTML(c.last_name)}</td>
+            <td>${escapeHTML(c.email)}</td>
+            <td>${escapeHTML(c.phone)}</td>
+            <td>${escapeHTML(c.address)}</td>
+            <td>
+              <div class="actions">
+                <button onclick="editCustomer(${c.customer_id})">
+                  Editar
+                </button>
+                <button class="danger"
+                  onclick="deleteCustomer(${c.customer_id})">
+                  Eliminar
+                </button>
+              </div>
+            </td>
+          `;
+
+          rows.appendChild(tr);
+        }
       } catch (error) {
-        showMessage('Error: ' + error.message, false);
+        showMessage(
+          'customer-message',
+          'Error: ' + error.message,
+          false
+        );
       }
-    });
+    }
+
+
+    // CREATE: POST /customers
+    document.getElementById('customer-form')
+      .addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const form = event.target;
+        const customer = Object.fromEntries(new FormData(form));
+
+        try {
+          await api('POST', '/customers', customer);
+
+          showMessage(
+            'customer-message',
+            'Cliente guardado correctamente',
+            true
+          );
+
+          form.reset();
+          await loadCustomers();
+        } catch (error) {
+          showMessage(
+            'customer-message',
+            'Error: ' + error.message,
+            false
+          );
+        }
+      });
+
+
+    // Abrir formulario de edición
+    function editCustomer(id) {
+      const customer = customersCache.find(
+        c => Number(c.customer_id) === Number(id)
+      );
+
+      if (!customer) return;
+
+      const form = document.getElementById('edit-customer-form');
+
+      form.elements['customer_id'].value = customer.customer_id;
+      form.elements['phone'].value = customer.phone;
+      form.elements['address'].value = customer.address;
+
+      document.getElementById('edit-customer-card').hidden = false;
+      document.getElementById('edit-customer-message').textContent = '';
+
+      document.getElementById('edit-customer-card')
+        .scrollIntoView({ behavior: 'smooth' });
+    }
+
+
+    // Cerrar formulario de edición
+    function closeEditCustomer() {
+      document.getElementById('edit-customer-card').hidden = true;
+    }
+
+
+    // UPDATE: PUT /customers/<id>
+    document.getElementById('edit-customer-form')
+      .addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const form = event.target;
+        const id = form.elements['customer_id'].value;
+
+        const customer = {
+          phone: form.elements['phone'].value,
+          address: form.elements['address'].value
+        };
+
+        try {
+          await api('PUT', '/customers/' + id, customer);
+
+          showMessage(
+            'customer-message',
+            'Cliente actualizado correctamente',
+            true
+          );
+
+          closeEditCustomer();
+          await loadCustomers();
+        } catch (error) {
+          showMessage(
+            'edit-customer-message',
+            'Error: ' + error.message,
+            false
+          );
+        }
+      });
+
 
     // DELETE: DELETE /customers/<id>
     async function deleteCustomer(id) {
       if (!confirm('¿Eliminar el cliente ' + id + '?')) return;
+
       try {
         await api('DELETE', '/customers/' + id);
-        loadCustomers();
+
+        showMessage(
+          'customer-message',
+          'Cliente eliminado correctamente',
+          true
+        );
+
+        await loadCustomers();
       } catch (error) {
-        showMessage('No se pudo eliminar: ' + error.message, false);
+        showMessage(
+          'customer-message',
+          'No se pudo eliminar: ' + error.message,
+          false
+        );
       }
     }
 
+
+    // ===================== PRODUCTOS =====================
+
+    // READ: GET /products
+    async function loadProducts() {
+      try {
+        const products = await api('GET', '/products');
+
+        productsCache = products;
+
+        const rows = document.getElementById('product-rows');
+        rows.innerHTML = '';
+
+        for (const p of products) {
+          const tr = document.createElement('tr');
+
+          tr.innerHTML = `
+            <td>${p.product_id}</td>
+            <td>${escapeHTML(p.name)}</td>
+            <td>${escapeHTML(p.category)}</td>
+            <td>${money(p.base_price)}</td>
+            <td>${p.available ? 'Sí' : 'No'}</td>
+            <td>
+              <button
+                onclick="toggleProduct(${p.product_id}, ${!p.available})">
+                ${p.available ? 'Desactivar' : 'Activar'}
+              </button>
+            </td>
+          `;
+
+          rows.appendChild(tr);
+        }
+      } catch (error) {
+        showMessage(
+          'product-message',
+          'Error: ' + error.message,
+          false
+        );
+      }
+    }
+
+
+    // CREATE: POST /products
+    document.getElementById('product-form')
+      .addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const form = event.target;
+        const product = Object.fromEntries(new FormData(form));
+
+        product.base_price = parseFloat(product.base_price);
+
+        try {
+          await api('POST', '/products', product);
+
+          showMessage(
+            'product-message',
+            'Producto guardado correctamente',
+            true
+          );
+
+          form.reset();
+          await loadProducts();
+        } catch (error) {
+          showMessage(
+            'product-message',
+            'Error: ' + error.message,
+            false
+          );
+        }
+      });
+
+
+    // UPDATE: PUT /products/<id>
+    async function toggleProduct(id, available) {
+      try {
+        await api('PUT', '/products/' + id, {
+          available: available
+        });
+
+        showMessage(
+          'product-message',
+          'Disponibilidad actualizada',
+          true
+        );
+
+        await loadProducts();
+      } catch (error) {
+        showMessage(
+          'product-message',
+          'Error: ' + error.message,
+          false
+        );
+      }
+    }
+
+
+    // ===================== PEDIDOS =====================
+
+    // Cargar clientes y productos disponibles
+    async function loadOrderForm() {
+      try {
+        const customers = await api('GET', '/customers');
+        const products = await api('GET', '/products');
+
+        customersCache = customers;
+        productsCache = products;
+
+        const customerSelect = document.getElementById('order-customer');
+        const productSelect = document.getElementById('order-product');
+
+        const previousCustomer = customerSelect.value;
+        const previousProduct = productSelect.value;
+
+        customerSelect.innerHTML =
+          '<option value="">Seleccionar cliente</option>';
+
+        for (const c of customers) {
+          const option = document.createElement('option');
+          option.value = c.customer_id;
+          option.textContent = c.first_name + ' ' + c.last_name;
+          customerSelect.appendChild(option);
+        }
+
+        productSelect.innerHTML =
+          '<option value="">Seleccionar producto</option>';
+
+        for (const p of products) {
+          if (!p.available) continue;
+
+          const option = document.createElement('option');
+
+          option.value = p.product_id;
+          option.textContent = p.name + ' (' + money(p.base_price) + ')';
+
+          productSelect.appendChild(option);
+        }
+
+        customerSelect.value = previousCustomer;
+        productSelect.value = previousProduct;
+
+      } catch (error) {
+        showMessage(
+          'order-message',
+          'Error cargando formulario: ' + error.message,
+          false
+        );
+      }
+    }
+
+
+    // Agregar producto al pedido
+    function addItem() {
+      const select = document.getElementById('order-product');
+      const quantityInput = document.getElementById('order-quantity');
+
+      const productId = Number(select.value);
+      const quantity = Number(quantityInput.value);
+
+      if (!productId) {
+        showMessage(
+          'order-message',
+          'Selecciona un producto',
+          false
+        );
+        return;
+      }
+
+      if (!Number.isInteger(quantity) || quantity < 1) {
+        showMessage(
+          'order-message',
+          'La cantidad debe ser un número entero mayor que cero',
+          false
+        );
+        return;
+      }
+
+      const product = productsCache.find(
+        p => Number(p.product_id) === productId && p.available
+      );
+
+      if (!product) {
+        showMessage(
+          'order-message',
+          'Producto no disponible',
+          false
+        );
+        return;
+      }
+
+      // Si el producto ya está agregado, aumentar cantidad
+      const existing = items.find(
+        i => i.product_id === productId
+      );
+
+      if (existing) {
+        existing.quantity += quantity;
+      } else {
+        items.push({
+          product_id: productId,
+          quantity: quantity
+        });
+      }
+
+      quantityInput.value = 1;
+      renderOrderItems();
+
+      showMessage(
+        'order-message',
+        'Producto agregado al pedido',
+        true
+      );
+    }
+
+
+    // Mostrar productos agregados
+    function renderOrderItems() {
+      const list = document.getElementById('order-items');
+      list.innerHTML = '';
+
+      let total = 0;
+
+      items.forEach((item, index) => {
+        const product = productsCache.find(
+          p => Number(p.product_id) === item.product_id
+        );
+
+        if (!product) return;
+
+        const subtotal = Number(product.base_price) * item.quantity;
+        total += subtotal;
+
+        const li = document.createElement('li');
+
+        const description = document.createElement('span');
+        description.textContent =
+          item.quantity + ' x ' + product.name +
+          ' — ' + money(subtotal) + ' ';
+
+        const removeButton = document.createElement('button');
+        removeButton.className = 'danger';
+        removeButton.textContent = 'Quitar';
+        removeButton.onclick = () => removeItem(index);
+
+        li.appendChild(description);
+        li.appendChild(removeButton);
+        list.appendChild(li);
+      });
+
+      document.getElementById('order-preview-total').textContent =
+        'Total estimado: ' + money(total);
+    }
+
+
+    // Quitar producto del pedido
+    function removeItem(index) {
+      items.splice(index, 1);
+      renderOrderItems();
+    }
+
+
+    // CREATE: POST /orders
+    async function sendOrder() {
+      const form = document.getElementById('order-form');
+
+      const customerId = Number(form.elements['customer_id'].value);
+      const address = form.elements['delivery_address'].value.trim();
+
+      if (!customerId || !address) {
+        showMessage(
+          'order-message',
+          'Selecciona un cliente e ingresa una dirección',
+          false
+        );
+        return;
+      }
+
+      if (items.length === 0) {
+        showMessage(
+          'order-message',
+          'Agrega al menos un producto',
+          false
+        );
+        return;
+      }
+
+      try {
+        const order = await api('POST', '/orders', {
+          customer_id: customerId,
+          delivery_address: address,
+          items: items
+        });
+
+        showMessage(
+          'order-message',
+          'Pedido ' + order.order_id +
+          ' creado correctamente. Total: ' + money(order.total),
+          true
+        );
+
+        items = [];
+        form.reset();
+
+        renderOrderItems();
+
+        await loadOrders();
+
+      } catch (error) {
+        showMessage(
+          'order-message',
+          'Error: ' + error.message,
+          false
+        );
+      }
+    }
+
+
+    // READ: GET /orders
+    async function loadOrders() {
+      try {
+        const orders = await api('GET', '/orders');
+        const customers = await api('GET', '/customers');
+
+        const rows = document.getElementById('order-rows');
+        rows.innerHTML = '';
+
+        const statuses = [
+          'received',
+          'preparing',
+          'on_the_way',
+          'delivered',
+          'cancelled'
+        ];
+
+        const statusNames = {
+          received: 'Recibido',
+          preparing: 'Preparando',
+          on_the_way: 'En camino',
+          delivered: 'Entregado',
+          cancelled: 'Cancelado'
+        };
+
+        for (const o of orders) {
+          const customer = customers.find(
+            c => Number(c.customer_id) === Number(o.customer_id)
+          );
+
+          const customerName = customer
+            ? customer.first_name + ' ' + customer.last_name
+            : 'Cliente #' + o.customer_id;
+
+          const options = statuses.map(s => `
+            <option value="${s}" ${s === o.status ? 'selected' : ''}>
+              ${statusNames[s]}
+            </option>
+          `).join('');
+
+          const tr = document.createElement('tr');
+
+          tr.innerHTML = `
+            <td>${o.order_id}</td>
+            <td>${escapeHTML(customerName)}</td>
+            <td>${money(o.total)}</td>
+            <td>
+              <select onchange="changeStatus(${o.order_id}, this.value)">
+                ${options}
+              </select>
+            </td>
+            <td>
+              <button class="danger"
+                onclick="cancelOrder(${o.order_id})"
+                ${o.status === 'cancelled' ? 'disabled' : ''}>
+                Cancelar
+              </button>
+            </td>
+          `;
+
+          rows.appendChild(tr);
+        }
+
+      } catch (error) {
+        showMessage(
+          'order-message',
+          'Error cargando pedidos: ' + error.message,
+          false
+        );
+      }
+    }
+
+
+    // UPDATE: PATCH /orders/<id>
+    async function changeStatus(id, status) {
+      try {
+        await api('PATCH', '/orders/' + id, {
+          status: status
+        });
+
+        showMessage(
+          'order-message',
+          'Estado del pedido actualizado',
+          true
+        );
+
+        await loadOrders();
+
+      } catch (error) {
+        showMessage(
+          'order-message',
+          'Error: ' + error.message,
+          false
+        );
+
+        await loadOrders();
+      }
+    }
+
+
+    // DELETE: DELETE /orders/<id>
+    // La API utiliza DELETE para cancelar el pedido
+    async function cancelOrder(id) {
+      if (!confirm('¿Cancelar el pedido ' + id + '?')) {
+        return;
+      }
+
+      try {
+        await api('DELETE', '/orders/' + id);
+
+        showMessage(
+          'order-message',
+          'Pedido cancelado correctamente',
+          true
+        );
+
+        await loadOrders();
+
+      } catch (error) {
+        showMessage(
+          'order-message',
+          'Error: ' + error.message,
+          false
+        );
+      }
+    }
+
+
+    // ===================== STOCK =====================
+
+    // READ: GET /ingredients
+    // READ: GET /ingredients/low-stock
+    async function loadStock() {
+      try {
+        const ingredients = await api('GET', '/ingredients');
+
+        const lowStock = await api(
+          'GET',
+          '/ingredients/low-stock'
+        );
+
+        const lowIds = new Set(
+          lowStock.map(i => i.ingredient_id)
+        );
+
+        const rows = document.getElementById('stock-rows');
+        rows.innerHTML = '';
+
+        for (const i of ingredients) {
+          const isLow = lowIds.has(i.ingredient_id);
+
+          const tr = document.createElement('tr');
+
+          if (isLow) {
+            tr.classList.add('low-stock');
+          }
+
+          tr.innerHTML = `
+            <td>${i.ingredient_id}</td>
+            <td>${escapeHTML(i.name)}</td>
+            <td>${escapeHTML(i.unit_of_measure)}</td>
+            <td>${i.current_stock}</td>
+            <td>${i.minimum_stock}</td>
+            <td>${isLow ? 'Stock bajo' : 'Normal'}</td>
+          `;
+
+          rows.appendChild(tr);
+        }
+
+        const lowCount = ingredients.filter(
+          i => lowIds.has(i.ingredient_id)
+        ).length;
+
+        showMessage(
+          'stock-message',
+          lowCount === 0
+            ? 'Todos los ingredientes tienen stock suficiente'
+            : 'Ingredientes con stock bajo: ' + lowCount,
+          lowCount === 0
+        );
+
+      } catch (error) {
+        showMessage(
+          'stock-message',
+          'Error: ' + error.message,
+          false
+        );
+      }
+    }
+
+
+    // ===================== INICIALIZACIÓN =====================
+
+    // Cargar las pantallas al abrir la aplicación
     loadCustomers();
+    loadProducts();
+    loadStock();
+
   </script>
+
 </body>
 </html>
