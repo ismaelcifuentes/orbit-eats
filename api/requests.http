@@ -81,3 +81,37 @@ Authorization: {{token}}
 ### 10. Suppliers of ingredient 2 (FR-05)
 GET {{base}}/ingredients/2/suppliers
 Authorization: {{token}}
+
+### 11. Not enough stock -> 409 with the missing ingredients (nothing is saved)
+POST {{base}}/orders
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "customer_id": 1,
+  "delivery_address": "Av. Amazonas N24-10",
+  "items": [{"product_id": 1, "quantity": 1000}]
+}
+
+### 12. Cancel an order -> its ingredients go back to stock
+DELETE {{base}}/orders/1
+Authorization: {{token}}
+
+### 13. Add an ingredient to a product's recipe (every product needs one before it can be ordered)
+POST {{base}}/products/3/recipe
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "ingredient_id": 4,
+  "quantity_required": 0.3
+}
+
+### 14. Restock an ingredient (e.g. after a purchase)
+PUT {{base}}/ingredients/2
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "current_stock": 50
+}

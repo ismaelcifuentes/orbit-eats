@@ -266,12 +266,38 @@ register_crud('supplies', Supply, SupplySchema, 'Supply')
 
 
 # ======================================================================
-# Orders (FR-02, FR-06): an order and its lines are saved together
+# Orders (FR-02, FR-04, FR-06)
+# Creating an order discounts its ingredients from stock; cancelling it
+# gives them back. Order, lines and stock change in ONE transaction.
 # ======================================================================
 def order_to_json(order):
     result = OrdersSchema().dump(order)
     result['details'] = OrderDetailSchema(many=True).dump(order.details)
     return result
+
+
+def ingredients_needed(lines):
+    """lines = [(product_id, quantity), ...]
+    Returns {ingredient_id: total quantity} using each product's recipe."""
+    needed = {}
+    for product_id, quantity in lines:
+        for row in ProductIngredient.query.filter_by(product_id=product_id).all():
+            needed[row.ingredient_id] = needed.get(row.ingredient_id, 0) + row.quantity_required * quantity
+    return needed
+
+
+def lock_ingredients(ingredient_ids):
+    """SELECT ... FOR UPDATE: two orders at the same time cannot read the same
+    stock and both discount it. Always locked in the same order (by id)."""
+    return (Ingredient.query.filter(Ingredient.ingredient_id.in_(ingredient_ids))
+            .order_by(Ingredient.ingredient_id).with_for_update().all())
+
+
+def return_stock(order):
+    """Gives back the ingredients of a cancelled order."""
+    needed = ingredients_needed([(d.product_id, d.quantity) for d in order.details])
+    for ingredient in lock_ingredients(list(needed)):
+        ingredient.current_stock += needed[ingredient.ingredient_id]
 
 
 @app.route('/orders', methods=['GET'])
@@ -301,6 +327,7 @@ def create_order():
     if not data.get('customer_id') or not data.get('delivery_address') or not items:
         return jsonify({'message': 'customer_id, delivery_address and items are required'}), 400
 
+    # 1. Check every product: it exists, is available and has a recipe
     order = Orders(
         customer_id=data['customer_id'],
         employee_id=data.get('employee_id'),
@@ -308,21 +335,53 @@ def create_order():
         status='received',
     )
     total = 0
+    lines = []
     for item in items:
         product = db.session.get(Product, item.get('product_id'))
+        quantity = int(item.get('quantity', 0))
         if product is None or not product.available:
             return jsonify({'message': f"Product {item.get('product_id')} not available"}), 400
-        quantity = int(item.get('quantity', 0))
+        if quantity <= 0:
+            return jsonify({'message': 'quantity must be greater than 0'}), 400
+        if ProductIngredient.query.filter_by(product_id=product.product_id).count() == 0:
+            return jsonify({'message': f'Product {product.name} has no recipe; add its ingredients first'}), 400
         # FR-06: the price is copied at the moment of purchase
         subtotal = product.base_price * quantity
         order.details.append(OrderDetail(product_id=product.product_id, quantity=quantity,
                                          unit_price=product.base_price, subtotal=subtotal))
         total += subtotal
+        lines.append((product.product_id, quantity))
     order.total = total
 
+    # 2. Ingredients needed = quantity_required x quantity ordered
+    needed = ingredients_needed(lines)
+
+    # 3. Check stock (with the rows locked) before saving anything
+    ingredients = lock_ingredients(list(needed))
+    missing = [{'ingredient': i.name, 'needed': float(needed[i.ingredient_id]),
+                'available': float(i.current_stock)}
+               for i in ingredients if i.current_stock < needed[i.ingredient_id]]
+    if missing:
+        db.session.rollback()   # releases the locks; nothing was saved
+        return jsonify({'message': 'Not enough stock', 'missing': missing}), 409
+
+    # 4. Discount the stock and save everything in one transaction
+    for ingredient in ingredients:
+        ingredient.current_stock -= needed[ingredient.ingredient_id]
     db.session.add(order)
-    db.session.commit()   # one transaction: the order and all its lines, or nothing
+    db.session.commit()   # order + lines + stock, or nothing (any error -> rollback)
     return jsonify(order_to_json(order)), 201
+
+
+def cancel(order):
+    """Shared by PATCH (status = cancelled) and DELETE. Returns an error or None."""
+    if order.status == 'cancelled':
+        return jsonify({'message': 'Order is already cancelled'}), 400
+    if order.status == 'delivered':
+        return jsonify({'message': 'A delivered order cannot be cancelled'}), 400
+    return_stock(order)
+    order.status = 'cancelled'
+    return None
 
 
 @app.route('/orders/<int:id>', methods=['PATCH'])
@@ -333,8 +392,16 @@ def update_order(id):
     if order is None:
         return not_found('Order')
     data = request.get_json() or {}
-    if 'status' in data:
-        order.status = data['status']
+    if 'status' in data and data['status'] != order.status:
+        if order.status == 'cancelled':
+            # Reopening it would need the stock again: create a new order instead
+            return jsonify({'message': 'A cancelled order cannot change status'}), 400
+        if data['status'] == 'cancelled':
+            error = cancel(order)
+            if error:
+                return error
+        else:
+            order.status = data['status']
     if 'employee_id' in data:
         order.employee_id = data['employee_id']
     db.session.commit()
@@ -347,7 +414,9 @@ def cancel_order(id):
     order = db.session.get(Orders, id)
     if order is None:
         return not_found('Order')
-    order.status = 'cancelled'
+    error = cancel(order)
+    if error:
+        return error
     db.session.commit()
     return jsonify(order_to_json(order)), 200
 
