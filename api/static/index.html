@@ -436,7 +436,7 @@
           stock mínimo aparecen resaltados en rojo.
         </p>
 
-        <button onclick="loadStock()">
+        <button id="refresh-stock" onclick= "loadStock()">
           Actualizar inventario
         </button>
 
@@ -1171,18 +1171,23 @@
     }
 
 
+
     // ===================== STOCK =====================
 
-    // READ: GET /ingredients
-    // READ: GET /ingredients/low-stock
+    // Obtener y actualizar el inventario desde MySQL
     async function loadStock() {
-      try {
-        const ingredients = await api('GET', '/ingredients');
+      const button = document.getElementById('refresh-stock');
 
-        const lowStock = await api(
-          'GET',
-          '/ingredients/low-stock'
-        );
+      // Mostrar que se está actualizando
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Actualizando...';
+      }
+
+      try {
+        // Consultar nuevamente la API
+        const ingredients = await api('GET', '/ingredients');
+        const lowStock = await api('GET', '/ingredients/low-stock');
 
         const lowIds = new Set(
           lowStock.map(i => i.ingredient_id)
@@ -1191,9 +1196,9 @@
         const rows = document.getElementById('stock-rows');
         rows.innerHTML = '';
 
+        // Mostrar los datos actualizados
         for (const i of ingredients) {
           const isLow = lowIds.has(i.ingredient_id);
-
           const tr = document.createElement('tr');
 
           if (isLow) {
@@ -1216,20 +1221,29 @@
           i => lowIds.has(i.ingredient_id)
         ).length;
 
+        // Confirmar que la consulta terminó
+        const time = new Date().toLocaleTimeString('es-EC');
+
         showMessage(
           'stock-message',
-          lowCount === 0
-            ? 'Todos los ingredientes tienen stock suficiente'
-            : 'Ingredientes con stock bajo: ' + lowCount,
+          'Inventario actualizado a las ' + time +
+          '. Ingredientes con stock bajo: ' + lowCount,
           lowCount === 0
         );
 
       } catch (error) {
         showMessage(
           'stock-message',
-          'Error: ' + error.message,
+          'Error al actualizar: ' + error.message,
           false
         );
+
+      } finally {
+        // Restaurar el botón
+        if (button) {
+          button.disabled = false;
+          button.textContent = 'Actualizar inventario';
+        }
       }
     }
 
