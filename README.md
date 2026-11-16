@@ -48,8 +48,10 @@ Todas las rutas piden el encabezado `Authorization: Bearer token-secreto-123`.
 | --- | --- | --- |
 | GET / POST | `/customers`, `/employees`, `/products`, `/ingredients`, `/suppliers`, `/supplies` | Listar / crear |
 | GET / PUT / DELETE | `/<recurso>/<id>` | Ver / actualizar / eliminar |
-| GET / POST | `/orders` | Listar (filtro `?status=`) / crear pedido con sus productos |
-| GET / PATCH / DELETE | `/orders/<id>` | Ver / cambiar estado o repartidor / cancelar |
+| GET / POST | `/orders` | Listar (filtro `?status=`) / crear pedido: descuenta del stock los ingredientes de cada receta; 409 si no alcanza |
+| GET / PATCH / DELETE | `/orders/<id>` | Ver / cambiar estado o repartidor / cancelar (devuelve el stock; no se puede cancelar un pedido entregado) |
 | GET / POST | `/products/<id>/recipe` | Ver / agregar ingrediente a la receta |
 | GET | `/ingredients/low-stock` | Ingredientes bajo el mínimo |
 | GET | `/ingredients/<id>/suppliers` | Proveedores de un ingrediente |
+
+Todo producto necesita su receta (`POST /products/<id>/recipe`) antes de poder pedirse; si no la tiene, `POST /orders` responde 400.
